@@ -1,7 +1,11 @@
+//CLIENT
+ 
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif 
 
+#include "FormatLastError.h"
 
 #include <iostream>;
 #include <Windows.h>;
@@ -17,6 +21,7 @@ using namespace std;
 void main()
 {
 	setlocale(LC_ALL, "");
+	cout << "********************** CLIENT *************************\n" << endl;
 
 	//1) Инициализация WinSOCK;
 	WSAData wsaData;
@@ -37,6 +42,7 @@ void main()
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP; //Определяет протокл транспортного уровня
 	iResult = getaddrinfo("127.0.0.1", "27015", &hints, &target);
+	//"127.0.0.1" - IP самого компьютера.
 
 	if (iResult != 0)
 	{
@@ -51,7 +57,7 @@ void main()
 
 	if (connect_socket == INVALID_SOCKET)
 	{
-		cout << "SOCKET creation failed with error:\t" << WSAGetLastError() << endl;
+		cout << "SOCKET creation failed with error:\t" << FormatLastError(WSAGetLastError())<< endl;
 		WSACleanup();
 		return;
 	}
@@ -78,7 +84,7 @@ void main()
 	iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
 	if (iResult == SOCKET_ERROR)
 	{
-		cout << "Send failed with error: " << WSAGetLastError() << endl;
+		cout << "Send failed with error: " << FormatLastError(WSAGetLastError()) << endl;
 		closesocket(connect_socket);
 		WSACleanup();
 		return;
@@ -93,8 +99,8 @@ void main()
 		{
 			cout << "Bytes recevived: " << iResult << "Message: " << recv_buffer << endl;
 		}
-		else if (iResult == 0) cout << "Connection closed" << endl;
-		else cout << "Receive failed with error " << WSAGetLastError() << endl;
+		else if (iResult == 0) cout << "Connection closed" << endl; 
+		else cout << "Receive failed with error " << FormatLastError(WSAGetLastError()) << endl;
 
 	} while (iResult > 0);
 
@@ -103,7 +109,7 @@ void main()
 
 	if (iResult == SOCKET_ERROR)
 	{
-		cout << "Shutdown failed with error " << WSAGetLastError() << endl;
+		cout << "Shutdown failed with error " << FormatLastError(WSAGetLastError()) << endl;
 	}
 
 	
