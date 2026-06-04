@@ -23,6 +23,7 @@ void main()
 	setlocale(LC_ALL, "");
 	cout << "********************** CLIENT *************************\n" << endl;
 
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//1) Инициализация WinSOCK;
 	WSAData wsaData;
 	int iResult = 0;
@@ -33,25 +34,64 @@ void main()
 		return;
 	}
 
-	//2) Определяем параметры подключения
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+	//2) Определяем параметры подключения 
 	addrinfo hints;
-	addrinfo* target;
+	addrinfo* target = nullptr;
+
+
+	//заполняем данные подключения через консоль
+	char serverIp[64];
+	char serverPort[16];
+
+	int is_Available_adres = 0;
+	 
+	cout << "\x1b[90mДля выхода из программы нажмите введите 0\x1b[0m\n\n";
+
+	cout << "Введите IP сервера: ";
+
+
+	while (is_Available_adres != 1)
+	{
+		in_addr addr;
+		cin >> serverIp;
+
+		is_Available_adres = inet_pton(
+			AF_INET,
+			serverIp,
+			&addr
+		);
+
+		if (strcmp(serverIp, "0") == 0) return; //выход из программы
+		if (is_Available_adres == 0) cout << "\nВеденное занчение не являеться IP адресом. \nПовторите ввод: ";
+		
+	}
+
+
+	cout << "Введите порт сервера: ";
+	cin >> serverPort;
+
 	 
 	ZeroMemory(&hints, sizeof(hints)); //обнуляем экземпляр струтуры 
 	hints.ai_family = AF_INET; // Стэк протоколов TCP/IPv4
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP; //Определяет протокл транспортного уровня
-	iResult = getaddrinfo("127.0.0.1", "27015", &hints, &target);
+	//iResult = getaddrinfo("127.0.0.1", "27015", &hints, &target);
 	//"127.0.0.1" - IP самого компьютера.
+
+	iResult = getaddrinfo(serverIp, serverPort, &hints, &target); //применяем введенные данные
+
 
 	if (iResult != 0)
 	{
-		cout << "getadressinfo() failed with code " << iResult << endl;
-		freeaddrinfo(target);
+		cout << "getadressinfo() failed with code: " << iResult << endl;
+		//freeaddrinfo(target);
 		WSACleanup();
 		return;
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//3) Создаем сокет:
 	SOCKET connect_socket = socket(target->ai_family, target->ai_socktype, target->ai_protocol);
 
@@ -78,6 +118,8 @@ void main()
 
 	//freeaddrinfo(target);
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//5) Отправка данных:
 	CHAR send_buffer[MTU] = "Hello Server";
 
@@ -90,6 +132,8 @@ void main()
 		return;
 	}
 	
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//6) Получение данных:
 	CHAR recv_buffer[MTU] = {};
 	do
@@ -113,7 +157,7 @@ void main()
 	}
 
 	
-	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//7) освобождение ресурсов WinSOCK 
 	closesocket(connect_socket);
 	WSACleanup();

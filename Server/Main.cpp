@@ -24,6 +24,7 @@ void main()
 	setlocale(LC_ALL, "Russian");
 	cout << "************************* SERVER *************************\n" << endl;
 
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//1) Инициализация WinSOCK;
 	WSAData wsaData;
 	INT iResult = 0;
@@ -34,9 +35,11 @@ void main()
 		return;
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//2) Параметры подключения
 	addrinfo hints;
-	addrinfo* target;
+	addrinfo* target = nullptr;
 
 	ZeroMemory(&hints, sizeof(hints)); //обнуляем экземпляр струтуры 
 	hints.ai_family = AF_INET; // Стэк протоколов TCP/IPv4
@@ -49,16 +52,17 @@ void main()
 	if (iResult != 0)
 	{
 		cout << "getadressinfo() failed with code " << iResult << endl;
-		freeaddrinfo(target);
+		/*freeaddrinfo(target);*/
 		WSACleanup();
 		return;
 	}
 
 
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//3) Создаем сокет:
 	SOCKET listen_socket = socket(target->ai_family, target->ai_socktype, target->ai_protocol);
 
-	//listen_socket = INVALID_SOCKET; //проверка 
+	//isten_socket = INVALID_SOCKET; //проверка 
 	if (listen_socket == INVALID_SOCKET)
 	{
 		cout << "SOCKET creation failde wuth error: " << FormatLastError(WSAGetLastError()) << endl;
@@ -67,6 +71,8 @@ void main()
 		return;
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//4) Привязываем сокет к интерфейсу и порту
 	iResult = bind(listen_socket, target->ai_addr, target->ai_addrlen);
 	if (iResult != 0)
@@ -78,6 +84,8 @@ void main()
 		return;
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//5) Запускаем прослушивание порта
 	if (listen(listen_socket, 1) == SOCKET_ERROR) // 1 - Максимальное количество одновременно подключенных клиентов.
 	{
@@ -88,8 +96,22 @@ void main()
 		return;
 	}
 
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//6) Принмаем подключение от клиента
-	SOCKET client_socket = accept(listen_socket, NULL, NULL); //для каждого клиента создаеться свое подключение
+
+	sockaddr_in client_addr; //стандартная структура хранящая адрес, его тип, порт (данные подключения)
+							 // sockaddr_in хранит адрес в бинарном виде, поле .sin_addr = 11000000 10101000 00000001 00001111
+	int client_addr_size = sizeof(client_addr);
+
+	/*SOCKET client_socket = accept(listen_socket, NULL, NULL);*/ //для каждого клиента создаеться свое подключение
+	SOCKET client_socket =  accept(
+							listen_socket,
+							(sockaddr*)&client_addr, //записываем данные в о подключении клиента в переменную 
+							&client_addr_size 
+							);
+
+
 	if (client_socket == INVALID_SOCKET)
 	{
 		cout << "Accept failed wity error: " << FormatLastError(WSAGetLastError()) << endl;
@@ -99,6 +121,27 @@ void main()
 		return;
 	}
 
+	//Подключение прошло успешно выводим инофомацию о клинете
+
+	char client_ip[INET_ADDRSTRLEN]; //INET_ADDRSTRLEN - максимальная длина адреса IPv4
+
+	inet_ntop(
+		AF_INET,				//флаг IPv4
+		&client_addr.sin_addr,  //сохранненый в бинарном виде адрес подключения
+		client_ip,				//буфер обмена
+		sizeof(client_ip)
+	);
+
+	int client_port = ntohs(client_addr.sin_port);	//порт хранится в network byte order - конвертируем из
+													// сетевого формата в в формат процессора 
+	
+	cout << "Client connected " << ">> IP: " << client_ip << "\n\t\t >> Port: " << client_port << endl << endl;;
+
+
+
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//7) Получаем данные от клиента
 	CHAR recv_buffer[MTU] = {};
 	INT iRecivedBytes = 0;
@@ -131,6 +174,7 @@ void main()
 	while (iRecivedBytes > 0);
 
 
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//8) Разрываем TCP - соединение
 	iResult = shutdown(client_socket, SD_BOTH);
 	if (iResult == SOCKET_ERROR)
@@ -139,8 +183,8 @@ void main()
 	}
 
 
-
-	//?) освобождение ресурсов WinSOCK 
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+	//9) освобождение ресурсов WinSOCK 
 	closesocket(listen_socket);
 	freeaddrinfo(target);
 	WSACleanup();

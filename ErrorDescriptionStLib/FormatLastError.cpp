@@ -19,7 +19,7 @@ const char* FormatLastError(int error)
                                                     // NULL = использовать системные таблицы Windows
 
         error,                                      // код ошибки, для которого нужно получить текст
-                                                    // например WSAGetLastError()
+                                                    // WSAGetLastError()
 
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // язык сообщения.
                                                     // использовать язык системы по умолчанию
@@ -28,7 +28,7 @@ const char* FormatLastError(int error)
                                                     // Windows запишет сюда адрес выделенной строки
 
         sizeof(buffer),                             // размер буфера.
-                                                    // 0 потому что память выделяет сама Windows
+                                                   
 
         NULL                                        // дополнительные параметры для подстановок (%1 %2)
                                                     // не используются
