@@ -24,6 +24,7 @@
     <ProjectGuid>{4c038fb7-2c66-4cbe-b340-f7e88ce29588}</ProjectGuid>
     <RootNamespace>NetworkProgramming</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Client</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
