@@ -23,6 +23,8 @@ void main()
 	setlocale(LC_ALL, "");
 	cout << "********************** CLIENT *************************\n" << endl;
 
+	/*CHAR send_buffer[MTU] = "Hello Server";*/
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//1) Инициализация WinSOCK;
 	WSAData wsaData;
@@ -70,6 +72,7 @@ void main()
 
 	cout << "Введите порт сервера: ";
 	cin >> serverPort;
+	cin.ignore(10000, '\n');
 
 	 
 	ZeroMemory(&hints, sizeof(hints)); //обнуляем экземпляр струтуры 
@@ -122,31 +125,43 @@ void main()
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//5) Отправка данных:
 	CHAR send_buffer[MTU] = "Hello Server";
-
-	iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
-	if (iResult == SOCKET_ERROR)
-	{
-		cout << "Send failed with error: " << FormatLastError(WSAGetLastError()) << endl;
-		closesocket(connect_socket);
-		WSACleanup();
-		return;
-	}
-	
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
-	//6) Получение данных:
-	CHAR recv_buffer[MTU] = {};
 	do
 	{
-		iResult = recv(connect_socket, recv_buffer, MTU, 0);
-		if (iResult > 0)
+		
+		iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
+		if (iResult == SOCKET_ERROR)
 		{
-			cout << "Bytes recevived: " << iResult << "Message: " << recv_buffer << endl;
+			cout << "Send failed with error: " << FormatLastError(WSAGetLastError()) << endl;
+			closesocket(connect_socket);
+			WSACleanup();
+			return;
 		}
-		else if (iResult == 0) cout << "Connection closed" << endl; 
-		else cout << "Receive failed with error " << FormatLastError(WSAGetLastError()) << endl;
 
-	} while (iResult > 0);
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
+		//6) Получение данных:
+		CHAR recv_buffer[MTU] = {};
+		//do
+		//{
+			iResult = recv(connect_socket, recv_buffer, MTU, 0);
+			if (iResult > 0)
+			{
+				cout << "Bytes recevived: " << iResult << "Message: " << recv_buffer << endl;
+			}
+			else if (iResult == 0) cout << "Connection closed" << endl;
+			else cout << "Receive failed with error " << FormatLastError(WSAGetLastError()) << endl;
+
+	/*	} while (iResult > 0);*/
+
+		ZeroMemory(send_buffer, MTU);
+		ZeroMemory(recv_buffer, MTU);
+
+		cout << "ВВедите сообщение: ";
+		SetConsoleCP(1251); //кодировка языка 
+		cin.getline(send_buffer, MTU);
+		SetConsoleCP(866); //возвращаем кодировку
+
+	} while (strcmp(send_buffer, "exit") != 0);
 
 
 	iResult = shutdown(connect_socket, SD_BOTH); //Закрывааем сокет на получение и отправку данных (разрыв TCP-соединения)

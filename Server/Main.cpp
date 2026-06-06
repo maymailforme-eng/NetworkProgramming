@@ -143,11 +143,12 @@ void main()
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//7) Получаем данные от клиента
-	CHAR recv_buffer[MTU] = {};
+	
 	INT iRecivedBytes = 0;
 	INT iSendBytes = 0;
 	do
 	{
+		CHAR recv_buffer[MTU] = {};
 		iRecivedBytes = recv(client_socket, recv_buffer, MTU, 0);
 		if (iRecivedBytes > 0)
 		{
