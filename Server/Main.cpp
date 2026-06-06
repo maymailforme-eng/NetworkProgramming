@@ -231,7 +231,7 @@ void main()
 		std::thread clientThread(ClientHandler, client_socket);
 
 
-		// detach означает: поток работает самостоятельно, аналог UniTask - Forget() 
+		// detach означает: поток работает самостоятельно - не уничтожеться при выходе из области видимости, аналог UniTask - Forget() 
 		clientThread.detach();
 	}
 
