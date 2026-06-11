@@ -2,39 +2,59 @@
 
 #include "FormatLastError.h"
 
-#include <Windows.h>
+//#include <Windows.h>
+//
+//const char* FormatLastError(int error)
+//{
+//
+//    static char buffer[512];                        //статический что бы не затереть массив при выходе.
+//
+//    FormatMessageA(
+//                                                    //Различные флаги модификаторы
+//        //FORMAT_MESSAGE_ALLOCATE_BUFFER |          // Windows сама выделит память под строку ошибки - нужно потом очищать 
+//        FORMAT_MESSAGE_FROM_SYSTEM |                // искать текст ошибки в системных таблицах Windows
+//        FORMAT_MESSAGE_IGNORE_INSERTS,              // игнорировать параметры вида %1 %2 внутри сообщения
+//
+//        NULL,                                       // источник сообщений.
+//                                                    // NULL = использовать системные таблицы Windows
+//
+//        error,                                      // код ошибки, для которого нужно получить текст
+//                                                    // WSAGetLastError()
+//
+//        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // язык сообщения.
+//                                                    // использовать язык системы по умолчанию
+//
+//        buffer,                                     // адрес указателя на буфер.
+//                                                    // Windows запишет сюда адрес выделенной строки
+//
+//        sizeof(buffer),                             // размер буфера.
+//                                                   
+//
+//        NULL                                        // дополнительные параметры для подстановок (%1 %2)
+//                                                    // не используются
+//    );
+//
+//
+//
+//    return buffer;
+//}
 
-const char* FormatLastError(int error)
+
+CHAR* FormatLastError(DWORD dwError, CHAR szError[])
 {
-
-    static char buffer[512];                        //статический что бы не затереть массив при выходе.
-
-    FormatMessageA(
-                                                    //Различные флаги модификаторы
-        //FORMAT_MESSAGE_ALLOCATE_BUFFER |          // Windows сама выделит память под строку ошибки - нужно потом очищать 
-        FORMAT_MESSAGE_FROM_SYSTEM |                // искать текст ошибки в системных таблицах Windows
-        FORMAT_MESSAGE_IGNORE_INSERTS,              // игнорировать параметры вида %1 %2 внутри сообщения
-
-        NULL,                                       // источник сообщений.
-                                                    // NULL = использовать системные таблицы Windows
-
-        error,                                      // код ошибки, для которого нужно получить текст
-                                                    // WSAGetLastError()
-
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // язык сообщения.
-                                                    // использовать язык системы по умолчанию
-
-        buffer,                                     // адрес указателя на буфер.
-                                                    // Windows запишет сюда адрес выделенной строки
-
-        sizeof(buffer),                             // размер буфера.
-                                                   
-
-        NULL                                        // дополнительные параметры для подстановок (%1 %2)
-                                                    // не используются
-    );
-
-
-
-    return buffer;
+	LPSTR lpError = NULL;
+	FormatMessage
+	(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		dwError,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPSTR)&lpError,
+		0,
+		NULL
+	);
+	//strcpy(szError, lpError);
+	sprintf(szError, "Error %i: %s", dwError, lpError);
+	LocalFree(lpError);
+	return szError;
 }
