@@ -58,6 +58,12 @@ void main()
 		in_addr addr;
 		cin >> serverIp;
 
+		if (serverIp[0] == 0)
+		{
+			strcpy_s(serverIp, sizeof(serverIp), "127.0.0.1");
+		}
+
+
 		is_Available_adres = inet_pton(
 			AF_INET,
 			serverIp,
@@ -72,6 +78,10 @@ void main()
 
 	cout << "¬ведите порт сервера: ";
 	cin >> serverPort;
+	if (serverPort[0] == 0)
+	{
+		strcpy_s(serverPort, sizeof(serverPort), "27123");
+	}
 	cin.ignore(10000, '\n');
 
 	 

@@ -12,6 +12,8 @@
 #include <WS2tcpip.h>
 #include <iphlpapi.h>
 #include <thread>
+#include <unordered_map>
+#include <mutex>
 
 
 using namespace std;
@@ -19,6 +21,14 @@ using namespace std;
 #pragma comment(lib, "WS2_32.lib")
 
 #define MTU 1500
+
+//Поля для хранения данных о клиенте
+unordered_map<SOCKET, sockaddr_in> activeClients; //словарь подключенных клиентов
+mutex activeClientsMutex; //токен доступа к общему ресурсу
+
+
+//отображает всех подключенных пользователей к серверу
+VOID ShowActiveClients();
 
 
 //обработка сообщений клиента (вынесены пункты 7 и 8 в отдельную функцию которая будет открыта в отдельном потоке)
@@ -62,11 +72,22 @@ void ClientHandler(SOCKET client_socket)
 	} while (iRecivedBytes > 0);
 
 
+
+	//удаляем данные о клиенте
+	{
+		lock_guard<mutex> lock(activeClientsMutex); // здесь поток остановиться и будет ждять выполнения освобждения токена управления 
+		activeClients.erase(client_socket); // удаляе из словаря данные
+	}
+
+	ShowActiveClients(); //отображаем информацию 
+
+
 	// Закрываем соединение именно с этим клиентом.
 	// listen_socket не трогаем, потому что он нужен серверу для новых клиентов.
 	shutdown(client_socket, SD_BOTH);
 	closesocket(client_socket);
 }
+
 
 
 
@@ -81,6 +102,8 @@ void main()
 	CONST CHAR* portNumbet = "27015";
 
 	cout << "************************* SERVER *************************\n" << endl;
+
+
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////\
 	//1) Инициализация WinSOCK;
@@ -209,22 +232,34 @@ void main()
 
 		//Подключение прошло успешно выводим инофомацию о клинете
 
-		char client_ip[INET_ADDRSTRLEN]; //INET_ADDRSTRLEN - максимальная длина адреса IPv4
+		//char client_ip[INET_ADDRSTRLEN]; //INET_ADDRSTRLEN - максимальная длина адреса IPv4
 
-		inet_ntop(
-			AF_INET,					 //флаг IPv4
-			&client_addr.sin_addr,		 //сохранненый в бинарном виде адрес подключения
-			client_ip,					 //буфер обмена
-			sizeof(client_ip)
-		);
+		//inet_ntop(
+		//	AF_INET,					 //флаг IPv4
+		//	&client_addr.sin_addr,		 //сохранненый в бинарном виде адрес подключения
+		//	client_ip,					 //буфер обмена
+		//	sizeof(client_ip)
+		//);
 
-		int client_port = ntohs(client_addr.sin_port);	//порт хранится в network byte order - конвертируем из
-														// сетевого формата в в формат процессора 
+		//int client_port = ntohs(client_addr.sin_port);	//порт хранится в network byte order - конвертируем из
+		//												// сетевого формата в в формат процессора 
 
-		cout	<< "Client connected " 
-				<< ">> IP: " << client_ip 
-				<< "\n\t\t >> Port: " << client_port 
-				<< endl << endl;;
+		//cout	<< "Client connected " 
+		//		<< ">> IP: " << client_ip 
+		//		<< "\n\t\t >> Port: " << client_port 
+		//		<< endl << endl;;
+
+
+
+		//записываем данные о клиенте 
+		{
+			lock_guard<mutex> lock(activeClientsMutex); // проверка возможности доступа
+			activeClients[client_socket] = client_addr;
+		}
+
+		
+		ShowActiveClients(); //отображаем информацию 
+
 
 		// Создаем отдельный поток для обслуживания этого клиента.
 		// Главный поток сразу возвращается к accept()  и может принимать следующего клиента.
@@ -285,4 +320,44 @@ void main()
 	//9) освобождение ресурсов WinSOCK 
 	closesocket(listen_socket);
 	WSACleanup();
+}
+
+
+
+
+//отображает всех подключенных пользователей к серверу
+VOID ShowActiveClients()
+{
+	lock_guard<mutex> lock(activeClientsMutex);
+
+	cout << "\n===== ACTIVE CLIENTS =====" << endl;
+
+	if (activeClients.empty())
+	{
+		cout << "No active clients" << endl;
+		return;
+	}
+
+	for (const pair<const SOCKET, sockaddr_in>& client : activeClients)
+	{
+		SOCKET socket = client.first;
+		sockaddr_in address = client.second;
+
+		char ip[INET_ADDRSTRLEN];
+
+		inet_ntop(
+			AF_INET,
+			&address.sin_addr,
+			ip,
+			sizeof(ip)
+		);
+
+		cout
+			<< "Socket: " << socket
+			<< " IP: " << ip
+			<< " Port: " << ntohs(address.sin_port)
+			<< endl;
+	}
+
+	cout << "==========================\n" << endl;
 }
