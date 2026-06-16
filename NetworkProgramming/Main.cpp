@@ -1,4 +1,6 @@
 
+//Client
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 //Если с библиотекой <WinSOCK2.h> подключается файл <Windows.h> или <IPhlpAPI>,
@@ -12,14 +14,20 @@
 #include<WinSock2.h>
 #include<WS2tcpip.h>
 #include<iphlpapi.h>
-#include<FormatLastError.h>
-#include<Message.h>
+#include "FormatLastError.h"
+#include "Message.h"
 using namespace std;
 
 #pragma comment(lib, "WS2_32.lib")	//Встраиваем статическую библиотеку, для заголовка <WS2TCPIP.h>
-//#pragma comment(lib, "FormatLastError.lib") заменить на ErrorDescriptionStLib
+//#pragma comment(lib, "FormatLastError.lib")
 
 #define MTU	1500	//Maximum Transfer Unit - Максимально-возможный размер Ethernet-кадра
+
+//буферы 
+CHAR send_buffer[MTU] = "Привет Server";
+CHAR recv_buffer[MTU] = {};
+
+VOID Receive(SOCKET connect_socket);
 
 void main()
 {
@@ -89,8 +97,21 @@ void main()
 	//freeaddrinfo(target);
 
 	//5) Отправка:
-	CHAR send_buffer[MTU] = "Привет Server";
-	CHAR recv_buffer[MTU] = {};
+	//CHAR send_buffer[MTU] = "Привет Server";
+	//CHAR recv_buffer[MTU] = {};
+
+	DWORD dwThreadID;
+	HANDLE hRecive = CreateThread
+	(
+		NULL,
+		NULL,
+		(LPTHREAD_START_ROUTINE)Receive,
+		(LPVOID)connect_socket,
+		NULL,
+		&dwThreadID
+	
+	);
+
 	do
 	{
 		iResult = send(connect_socket, send_buffer, strlen(send_buffer), 0);
@@ -105,17 +126,7 @@ void main()
 		}
 
 		//6) Получение данных:
-		ZeroMemory(recv_buffer, MTU);
-		//do
-		{
-			iResult = recv(connect_socket, recv_buffer, MTU, 0);
-			dwError = WSAGetLastError();
-			if (iResult > 0)
-				cout << "Bytes received: " << iResult << "Message: " << recv_buffer << endl;
-			else if (iResult == 0)cout << "Connection closed" << endl;
-			else cout << "Receive failed with " << FormatLastError(dwError, szError) << endl;
-
-		} //while (iResult > 0);
+		
 		ZeroMemory(send_buffer, MTU);
 		if (strcmp(recv_buffer, DECLINE_MESSAGE) != 0)	cout << "Введите сообщение: ";
 		else cout << "Для выхода нажмите 'Enter'" << endl;
@@ -130,4 +141,26 @@ void main()
 	//7) Освобождаем ресурсы WinSOCK:
 	closesocket(connect_socket);
 	WSACleanup();
+}
+
+
+VOID Receive(SOCKET connect_socket)
+{
+	INT iResult = 0;
+	DWORD dwError = 0;
+	CHAR szError[256] = {};
+
+	ZeroMemory(recv_buffer, MTU);
+
+	do
+	{
+		iResult = recv(connect_socket, recv_buffer, MTU, 0);
+		dwError = WSAGetLastError();
+		if (iResult > 0)
+			cout << "Bytes received: " << iResult << "Message: " << recv_buffer << endl;
+		else if (iResult == 0)cout << "Connection closed" << endl;
+		else cout << "Receive failed with " << FormatLastError(dwError, szError) << endl;
+
+	} while (iResult > 0);
+
 }
