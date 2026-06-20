@@ -154,7 +154,9 @@ public:
 	}
 
 
-	double	get_consumption_per_second()	{ return consumption_per_second; }
+	double	get_consumption_per_second() { return consumption_per_second; }
+	
+																	
 	bool	IsStarted()const				{ return is_started; }
 
 
@@ -195,11 +197,16 @@ struct CarRuntimeState
 		return CarState::Idle;
 	}
 
+
+
 	void ClearFlags()
 	{
 		acceleration_requested = false;
 		braking_requested = false;
 	}
+
+
+
 
 };
 
@@ -318,14 +325,15 @@ public:
 		case CarState::Acceleration:
 
 			{
-				state.speed += 40.0 * delta_time;
+				state.speed += 20.0 * delta_time;
+				if (state.speed > 250) state.speed = 250;
 
 				int k = 0;
 				if (state.speed >= 0 && state.speed < 60) k = 66;
 				else if (state.speed >= 60 && state.speed < 100) k = 46;
 				else if (state.speed >= 100 && state.speed < 140) k = 66;
 				else if (state.speed >= 141 && state.speed < 200) k = 83;
-				else if (state.speed >= 200 && state.speed < 250) k = 100;
+				else if (state.speed >= 200 && state.speed <= 250) k = 100;
 
 				tank.TryGiveFuel(engine.get_consumption_per_second() * k * delta_time);
 			}
@@ -496,11 +504,11 @@ void main()
 
 	bool program_running = true;
 
-	auto previous_time = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point previous_time = std::chrono::steady_clock::now();
 
 	while (program_running)
 	{
-		auto current_time = std::chrono::steady_clock::now();
+		std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
 
 		std::chrono::duration<double> elapsed = current_time - previous_time;
 		previous_time = current_time;
